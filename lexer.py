@@ -14,18 +14,20 @@ class LexerError(Exception):
 rules = [
     ('\d+',             'NUMBER'),
     ('[&%a-zA-Z_]\w+|[a-zA-Z_]',    'IDENTIFIER'),
-    ('\+',              'PLUS'),
-    ('\-',              'MINUS'),
-    ('\*',              'MULTIPLY'),
-    ('\/(?!\/)',        'DIVIDE'),
-    ('\(',              'LP'),
-    ('\)',              'RP'),
-    ('\{',              'LB'),
-    ('\}',              'RB'),
+    ('(\+|\-|\*|\/(?!\/))','BINOP'),
+    ('\(',              'LPAR'),
+    ('\)',              'RPAR'),
+    ('\{',              'LBRA'),
+    ('\}',              'RBRA'),
     ('\;',              'EOL'),
-    ('\=',              'EQUALS'),
+    ('\=(?!=)',         'ASSIGN'),
+    ('\==',             'COMPARE'),
+    ('\<(?!=)',         'LESSER'),
+    ('\>(?!=)',         'BIGGER'),
+    ('\<=',             'LESSEREQUAL'),
+    ('\>=',             'BIGGEREQUAL'),
     ('\"(\\.|[^\"])*\"','STRING'),
-    (',',               'SEPERATOR'),
+    ('\,',              'SEPERATOR'),
     ('\/\/.*$',         'COMMENT'),
 
 ]
@@ -33,19 +35,21 @@ rules = [
 rules = [(re.compile(regex,re.MULTILINE),type) for regex, type in rules]
 re_ws_skip = re.compile('\S')
 
-def lexer(input:str, skip_whitespace:bool = True):
+def lexer(input:str, skip_whitespace:bool = True) -> [Token]:
     tokens = []
     pos = 0
-    while pos < len(input):
+    while pos <= len(input):
         if skip_whitespace:
-                match = re_ws_skip.search(input, pos)
+            match = re_ws_skip.search(input, pos)
 
-                if match:
-                    pos = match.start()
-                else:
-                    return None
+            if match:
+                pos = match.start()
+            else:
+                return tokens
 
         matches = [re.match(input,pos) for re,_ in rules]
+        
+
         try:
             match = [(match, rules[idx][1]) for idx,match in enumerate(matches) if match][0]
         except IndexError as e:
